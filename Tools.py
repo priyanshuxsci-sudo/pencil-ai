@@ -4,10 +4,11 @@ import os
 import time
 from dotenv import load_dotenv
 load_dotenv()
+from back_up import chat_back
 
 API_KEY2 = os.getenv("GEMINI_TALK_API")
 
-url = f"https://generativelanguage.googleapis.com/v1beta/models/gemma-4-31b-it:generateContent?key={API_KEY2}"
+url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key={API_KEY2}"
 
 headers = {"Content-Type": "application/json",
 "x-goog-api-key": API_KEY2
@@ -30,10 +31,6 @@ contents = []
 
 
 def load_previous_history():
-    """
-    Rebuilds real {role, parts} turns from disk so the model actually
-    remembers past sessions, instead of starting from contents = [].
-    """
     if not os.path.exists(CHAT_FILE):
         return
 
@@ -53,13 +50,13 @@ def load_previous_history():
             contents.append({"role": "model", "parts": [{"text": model_part}]})
 
 
-# Load past turns ONCE when this module is imported (i.e. when main.py starts)
 load_previous_history()
 
-
 def talk_gemini(question):
-
-    contents.append({"role": "user", "parts": [{"text": question}]})
+    contents.append({
+        "role": "user",
+        "parts": [{"text": question}]
+    })
 
     payload = {
         "contents": contents,
@@ -67,34 +64,65 @@ def talk_gemini(question):
             "parts": [
                 {
                     "text": (
-                        "Don't even Daire to answer in Big Paragraph Format. Be Pointwise. You are PENCIL.ai. Answer in a simple format, and in very "
-                        "easy and understandable way. Also, be more energetic and "
-                        "use lots of emojis. Answers should always be truthful and real. Don't Use Pointwise Format Unless Required. Be morr Decorative in OutPut"
+                        "Use BIG Headlines, and Emoji's"
                     )
                 }
             ]
         },
     }
 
-    response = requests.post(url, headers=headers, json=payload)
+    for _ in range(3):
+        try:
+            response = requests.post(
+                url,
+                headers=headers,
+                json=payload
+            )
 
-    try:
-        answer1 =response.json()["candidates"][0]["content"]["parts"][-1]["text"]
-        answer2= f"[*Chat Token Cost: {response.json()["usageMetadata"]["totalTokenCount"]}]\n  Prompt: {response.json()["usageMetadata"]["promptTokenCount"]}\n  OutPut: {response.json()["usageMetadata"]["candidatesTokenCount"]}\n"+ "-"*30 + "\n\n"
-        
-        answer = answer2 + answer1
-    except (KeyError, IndexError):
-        answer = f"Error or empty response: {result}"
-        return answer
+            answer1 = response.json()["candidates"][0]["content"]["parts"][-1]["text"]
 
-    contents.append({"role": "model", "parts": [{"text": answer}]})
+            usage = response.json()["usageMetadata"]
 
-    with open(CHAT_FILE, "a", encoding="utf-8") as f:
-        f.write(f"User: {question}\n")
-        f.write(f"Gemini: {answer1}\n\n")
-        
+            answer2 = (
+                "." * 30
+                + f"\n(Chat Token Cost: {usage['totalTokenCount']})"
+                + f"\n.Prompt: {usage['promptTokenCount']}"
+                + f"\n.OutPut: {usage['candidatesTokenCount']}\n"
+                + "." * 30
+                + "\n\n"
+            )
 
-    return answer
+            answer = answer2 + answer1
+
+            contents.append({
+                "role": "model",
+                "parts": [{"text": answer}]
+            })
+
+            with open(CHAT_FILE, "a", encoding="utf-8") as f:
+                f.write(f"User: {question}\n")
+                f.write(f"Gemini: {answer1}\n\n")
+
+            print()
+
+            return answer + "\n\nNOTE: If You Want To Dive Deeper, You can Simply Type Explain me 'SomeThing' Deeply."
+
+        except (
+            KeyError,
+            IndexError,
+            requests.exceptions.SSLError
+        ):
+            for i in "\n❌ API Call TimeOut. Retrying.":
+                print(i, end="", flush=True)
+                time.sleep(0.02)
+
+            for j in "...\n" + "." * 30:
+                print(j, end="", flush=True)
+                time.sleep(0.1)
+            continue
+    print("‼️API UNDER MAINTENANCE!\nRedirecting to NVIDIA INTERFACE")
+    answer_n = chat_back(question)
+    return answer_n
 
 
 def curator(save):
@@ -159,10 +187,14 @@ def talk_deep():
     print("✨DEEPTALK PENCIL.ai")
     print("Use Command .break to exit.")
     while True:
-        ask = input("\n\nAsk Anything: ")
+        for i in "\n\n Ask Anything":
+        	print(i , end="", flush=True)
+        	time.sleep(0.017)
+        ask = input(": ")
+        print()
         
         if ask == ".break":
-        	break
+        	return "THANKS"
 
         contents.append({"role": "user", "parts": [{"text": ask}]})
 
@@ -172,42 +204,58 @@ def talk_deep():
                 "parts": [
                     {
                         "text": (
-                            "Don't even Daire to answer in Big Paragraph Format. You are PENCIL.ai. Answer in a simple format, and in very "
-                            "easy and understandable way. Also, be more energetic and "
-                            "use lots of emojis. Answers should always be truthful and real. Don't Use Pointwise Format Unless Required. Be morr Decorative in OutPut"
+                            "You are PENCIL.ai. Answer in a simple format, and in very "
+                        "easy and understandable way. Also, be more energetic and "
+                        "yah very deep in your words and be Philosophical and merge "
+                        "this things in answer so well, that User should Not Notic, "
+                        "How deep and Philosophical you've gone in that Topic. "
+                        "Use a bit of emojis for Engagement. Answers should always "
+                        "be truthful and real. Don't be Much Decorative, Answer in "
+                        "Beautifully Great Format."
                         )
                     }
                 ]
             },
         }
-
-        response = requests.post(url, headers=headers, json=payload)
-
-        try:
-            answer1 = response.json()["candidates"][0]["content"]["parts"][-1]["text"]
-            answer2 = "="*30+f"\n[*Chat Token Cost: {response.json()["usageMetadata"]["totalTokenCount"]}]\n    Prompt: {response.json()["usageMetadata"]["promptTokenCount"]}\n    OutPut: {response.json()["usageMetadata"]["candidatesTokenCount"]}\n"+ "="*30 + "\n\n"
-
-            answer = answer2 + answer1
-        except (KeyError, IndexError):
-            answer = f"Error or empty response: {result}"
-            return answer
-
-        contents.append({"role": "model", "parts": [{"text": answer}]})
-
-        with open(CHAT_FILE, "a", encoding="utf-8") as f:
-            f.write(f"User: {ask}\n")
-            f.write(f"Gemini: {answer1}\n\n")
-            
-            print()
-
-            for ch in "✨ PENCIL.ai":
-                print(ch, end="", flush=True)
-                time.sleep(0.375)
-            print()
-            
-            for _ in answer:
-            	print(_, end="",flush=True)
-            	time.sleep(0.02)
+        
+        for _ in range(3):
+            try:
+            	response = requests.post(url, headers=headers, json=payload)
+            	answer1 = response.json()["candidates"][0]["content"]["parts"][-1]["text"]
+            	answer2 = "."*30+f"\n(Chat Token Cost: {response.json()["usageMetadata"]["totalTokenCount"]})\n    Prompt: {response.json()["usageMetadata"]["promptTokenCount"]}\n    OutPut: {response.json()["usageMetadata"]["candidatesTokenCount"]}\n"+ "."*30 + "\n\n"
+            	answer = answer2 + answer1
+            	contents.append({"role": "model", "parts": [{"text": answer}]})
+            	with open(CHAT_FILE, "a", encoding="utf-8") as f:
+            		f.write(f"User: {ask}\n")
+            		f.write(f"Gemini: {answer1}\n\n")
+            		print()
+            		for ch in "✨ PENCIL.ai\n\n":
+            		  print(ch, end="", flush=True)
+            		  time.sleep(0.075)
+            		for _ in answer + "\n":
+            			print(_, end="",flush=True)
+            			time.sleep(0.02)
+            		break
             	
-
-    return answer
+            except (KeyError, IndexError, requests.exceptions.SSLError):
+            		try:
+            			answer = f"Error or empty response: {result}"
+            		except NameError:
+            			for i in "\n❌ API Call TimeOut. Retrying.":
+            				print(i, end="", flush=True)
+            				time.sleep(0.02)
+            			for j in "...\n"+ "-"*30:
+            				print(j, end="", flush=True)
+            				time.sleep(0.1)
+            		else:
+            				for i in "\n❌ API Call TimeOut. Retrying.":
+            					print(i, end="", flush=True)
+            					time.sleep(0.02)
+            				for j in "...\n"+"-"*30:
+            					print(j, end="", flush=True)
+            					time.sleep(0.1)
+            		continue
+            print("‼️API UNDER MAINTENANCE!\n Redirecting to NVIDIA INTERFACE")
+            answer_n = chat_back(ask)
+            pass
+    return answer_n

@@ -67,9 +67,13 @@ def talk_gemini(question):
                         "Use BIG Headlines, and Emoji's"
                     )
                 }
-            ]
-        },
-    }
+            ]},
+            "tools": [
+        {
+            "google_search": {}
+        }
+    ]
+}
 
     for _ in range(3):
         try:
@@ -105,12 +109,13 @@ def talk_gemini(question):
 
             print()
 
-            return answer + "\n\nNOTE: If You Want To Dive Deeper, You can Simply Type Explain me 'SomeThing' Deeply."
+            return answer
 
         except (
             KeyError,
             IndexError,
-            requests.exceptions.SSLError
+            requests.exceptions.SSLError,
+            requests.exceptions.ConnectionError
         ):
             for i in "\n❌ API Call TimeOut. Retrying.":
                 print(i, end="", flush=True)
@@ -176,7 +181,8 @@ def wiki(place):
 
     data = response.json()
     page = next(iter(data["query"]["pages"].values()))
-
+    
+    print(response.json())
     save = page["extract"]
     results = curator(save)
 
@@ -186,6 +192,7 @@ def wiki(place):
 def talk_deep():
     print("✨DEEPTALK PENCIL.ai")
     print("Use Command .break to exit.")
+    new = input("Want Continue Conversation? Or New? ").strip().lower()
     while True:
         for i in "\n\n Ask Anything":
         	print(i , end="", flush=True)
@@ -204,14 +211,7 @@ def talk_deep():
                 "parts": [
                     {
                         "text": (
-                            "You are PENCIL.ai. Answer in a simple format, and in very "
-                        "easy and understandable way. Also, be more energetic and "
-                        "yah very deep in your words and be Philosophical and merge "
-                        "this things in answer so well, that User should Not Notic, "
-                        "How deep and Philosophical you've gone in that Topic. "
-                        "Use a bit of emojis for Engagement. Answers should always "
-                        "be truthful and real. Don't be Much Decorative, Answer in "
-                        "Beautifully Great Format."
+                            "Use BIG Headlines, and Emoji's"
                         )
                     }
                 ]
@@ -225,6 +225,12 @@ def talk_deep():
             	answer2 = "."*30+f"\n(Chat Token Cost: {response.json()["usageMetadata"]["totalTokenCount"]})\n    Prompt: {response.json()["usageMetadata"]["promptTokenCount"]}\n    OutPut: {response.json()["usageMetadata"]["candidatesTokenCount"]}\n"+ "."*30 + "\n\n"
             	answer = answer2 + answer1
             	contents.append({"role": "model", "parts": [{"text": answer}]})
+            	if new in ["yes", "y"]:
+            		with open("chat_history2.txt", "a", encoding="utf-8") as f:
+            			f.write(f"User: {ask}\n")
+            			f.write(f"Gemini: {answer1}\n\n")
+            			print()
+            		
             	with open(CHAT_FILE, "a", encoding="utf-8") as f:
             		f.write(f"User: {ask}\n")
             		f.write(f"Gemini: {answer1}\n\n")

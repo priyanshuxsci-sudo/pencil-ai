@@ -20,11 +20,14 @@ Available Tools:
    - Monuments
    - Geographic Knowledge
    Call the wiki function everytime the users asks about any location, Like Mumbai,Pune,India,USA, NewYork or any location on earth. And call gemini only if the input is not asking about any location specific question.
+   
+2. resoning
+	Use for:
+	- If the User's Question shows Symbols of Deep Research, rather than fellow conversation indications.
 
-2. gemini
+3. gemini
    Use for:
-   - If user is 'not' asking about location specific question
-   - Everything else
+   - For Everything else
 
 Always respond ONLY in JSON.
 
@@ -40,6 +43,17 @@ Response:
 }
 
 Example 2
+
+User:
+Explain Eternity in Deep.
+
+Response:
+{
+	"tool":"resoning",
+	"input":"Deeply Explain Eternity."
+}
+
+Example 3
 
 User:
 Explain Quantum Computing.
